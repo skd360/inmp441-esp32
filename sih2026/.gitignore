@@ -1,0 +1,11 @@
+# ESP-IDF build output
+build/
+
+# ESP-IDF managed components
+managed_components/
+
+# VS Code configuration
+.vscode/
+
+# clangd configuration
+.clangd
