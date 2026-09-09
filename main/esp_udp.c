@@ -9,7 +9,8 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
-
+#include "esp_heap_caps.h"
+#include "esp_system.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -60,6 +61,73 @@ static void wifi_init_softap(void)
     ESP_LOGI(TAG, "SSID: %s", WIFI_SSID);
     ESP_LOGI(TAG, "ESP32 IP: 192.168.4.1");
 }
+static void resource_monitor_task(void *arg)
+{
+    uint32_t prev_total = 0;
+    uint32_t prev_idle = 0;
+
+    while (1)
+    {
+        /* ---------- RAM ---------- */
+
+        size_t free_heap = esp_get_free_heap_size();
+        size_t total_heap = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+
+        float ram_free =
+            ((float)free_heap / total_heap) * 100.0f;
+
+        float ram_used =
+            100.0f - ram_free;
+
+        /* ---------- CPU ---------- */
+
+        UBaseType_t task_count = uxTaskGetNumberOfTasks();
+
+        TaskStatus_t *tasks =
+            malloc(task_count * sizeof(TaskStatus_t));
+
+        if (tasks != NULL)
+        {
+            uint32_t total_runtime = 0;
+            uint32_t idle_runtime = 0;
+
+            task_count = uxTaskGetSystemState(
+                tasks,
+                task_count,
+                &total_runtime);
+
+            for (UBaseType_t i = 0; i < task_count; i++)
+            {
+                if (strncmp(tasks[i].pcTaskName, "IDLE", 4) == 0)
+                {
+                    idle_runtime += tasks[i].ulRunTimeCounter;
+                }
+            }
+
+            uint32_t total_delta = total_runtime - prev_total;
+            uint32_t idle_delta = idle_runtime - prev_idle;
+
+            float cpu_usage =
+                100.0f -
+                (((float)idle_delta /
+                  ((float)total_delta * portNUM_PROCESSORS)) *
+                 100.0f);
+
+            printf(
+                "CPU: %.2f%% | RAM Used: %.2f%% | RAM Free: %.2f%%\n",
+                cpu_usage,
+                ram_used,
+                ram_free);
+
+            prev_total = total_runtime;
+            prev_idle = idle_runtime;
+
+            free(tasks);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
 
 static void udp_task(void *arg)
 {
@@ -105,7 +173,7 @@ static void udp_task(void *arg)
             vRingbufferReturnItem(buf_handle, item);
 
             // const char *message = "Hello from ESP32!";
-            audio_process(&audio_processor,pcm_buffer,num_samples_received);
+            audio_process(&audio_processor, pcm_buffer, num_samples_received);
 
             int err = sendto(
                 sock,
@@ -159,4 +227,5 @@ void app_main(void)
         NULL,
         5,
         NULL);
+    xTaskCreate(resource_monitor_task, "mem_monitor", 2048, NULL, 1, NULL);
 }
