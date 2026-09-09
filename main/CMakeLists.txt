@@ -1,5 +1,7 @@
 idf_component_register(SRCS 
-"sih2026.c"
+"esp_udp.c"
+# "sih2026.c"
 "inmp441.c"
-"frames.c"
+"preprocessing.c"
+# "frames.c"
                     INCLUDE_DIRS ".")
