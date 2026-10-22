@@ -431,29 +431,26 @@ static void inmp_init(void)
 {
     ESP_ERROR_CHECK(i2s_new_channel(&chan_conf, NULL, &rx_handle));
 
-    i2s_std_config_t std_conf = {
-        .clk_cfg = {
-            .sample_rate_hz = SAMPLE_RATE,
-            .clk_src = I2S_CLK_SRC_DEFAULT,
-            .mclk_multiple = I2S_MCLK_MULTIPLE_384,
+i2s_std_config_t std_conf = {
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+    .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
+        I2S_DATA_BIT_WIDTH_24BIT,
+        I2S_SLOT_MODE_MONO
+    ),
+    .gpio_cfg = {
+        .mclk = I2S_GPIO_UNUSED,
+        .bclk = GPIO_NUM_26,
+        .ws   = GPIO_NUM_25,
+        .dout = I2S_GPIO_UNUSED,
+        .din  = GPIO_NUM_33,
+        .invert_flags = {
+            .mclk_inv = false,
+            .bclk_inv = false,
+            .ws_inv   = false,
         },
-        .slot_cfg =
-            I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
-                I2S_DATA_BIT_WIDTH_24BIT,
-                I2S_SLOT_MODE_MONO),
-        .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
-            .bclk = GPIO_NUM_26,
-            .ws   = GPIO_NUM_25,
-            .dout = I2S_GPIO_UNUSED,
-            .din  = GPIO_NUM_33,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv   = false,
-            },
-        },
-    };
+    },
+};
+std_conf.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_384;
 
     /* INMP441 L/R pin must match this slot. Uncomment if required. */
     /* std_conf.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT; */
