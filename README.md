@@ -7,7 +7,7 @@ This project interfaces an **INMP441 digital MEMS microphone** with an **ESP32**
 ## Project image
 
 <!-- ADD PROJECT PHOTO HERE: upload a photograph of your ESP32 + INMP441 setup to images/setup.jpg. -->
-![ESP32 and INMP441 microphone setup](images/setup.jpg)
+![ESP32 and INMP441 microphone setup](images/setup.jpeg)
 
 > **Image placeholder:** Create an `images` folder in the repository and upload your hardware photograph as `setup.jpg`. You can change the path or caption above to match your image.
 
